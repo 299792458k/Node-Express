@@ -2,9 +2,21 @@
 
 .test {
     h1 {
-        color: $red-color
+        color: $red-color;
     }
     h2 {
-        color: green
+        color: green;
     }
+}
+
+.my-avatar {
+    width: 36px;
+    height: 36px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-right: 4px;
+}
+
+.my-courses-form-select {
+    width: 160px;
 }

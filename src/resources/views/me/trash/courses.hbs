@@ -1,0 +1,149 @@
+<div class="container">
+    <form method="POST" action="/me/trash/handle-form-action" id="my-course-form-action">
+        <h1>Trash</h1>
+        <a href="/me/stored/courses">My courses</a>
+        <div class="table-control d-flex align-items-center mt-4">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="formCheckboxAll">
+                <label class="form-check-label" for="formCheckboxAll">
+                    All
+                </label>
+            </div>
+            <select class="form-select ms-2 my-courses-form-select" id="form-select" name="action"
+                aria-label="Default select example">
+                <option value="">Options</option>
+                <option value="remove">Remove</option>
+                <option value="restore">Restore</option>
+            </select>
+            <button class="btn btn-primary ms-2" id="apply-btn" disabled>Apply</button>
+        </div>
+        <table class="table mt-4">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th scope="col">#</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">slug</th>
+                    <th scope="col">Created at</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each courses}}
+                <tr>
+                    <td>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="{{this._id}}"
+                                name="courseItemCheckbox">
+                        </div>
+                    </td>
+                    <th scope="row">{{sum @index 1}}</th>
+                    <td>{{this.name}}</td>
+                    <td>{{this.slug}}</td>
+                    <td>{{this.createdAt}}</td>
+                    <td><a href="#" class="link-primary" data-bs-toggle="modal" data-bs-target="#delete-course"
+                            data-bs-whatever="{{this._id}}">Remove</a></td>
+                    <td><a class="link-primary" id="restore-button" data-id="{{this._id}}">Restore</a></td>
+                </tr>
+                {{else}}
+                <tr>
+                    <td colspan="5" class="text-center">Your trash is empty!</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </form>
+</div>
+
+{{!-- Modal confirm delete --}}
+<div class="modal" id="delete-course" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Remove course</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>This action will permenantly remove your course!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="remove-button">Remove</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{!-- Hidden form for restore action --}}
+<form method="POST" id="hidden-restore-form">
+</form>
+{{!-- hidden form to submit delete course --}}
+<form method="POST" id="hidden-form">
+</form>
+
+{{!-- script to trigger modal --}}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var applyBtn = $('#apply-btn')
+        var myForm = $('#my-course-form-action')
+        var formSelect = $('#form-select')
+        var formCheckboxAll = $('#formCheckboxAll')
+        var courseItemCheckbox = $('input[name="courseItemCheckbox"]')
+        var removeModal = document.getElementById('delete-course')
+        var hiddenForm = document.querySelector('#hidden-form')
+        var hiddenRestoreForm = document.querySelector('#hidden-restore-form')
+        var restoreButtons = document.querySelectorAll('#restore-button')
+        var deleteButton = document.querySelector('#remove-button')
+
+        //handle restore action
+        restoreButtons.forEach(restoreButton => restoreButton.addEventListener('click',
+            (e) => {
+                e.preventDefault()
+                hiddenRestoreForm.action = `/me/${restoreButton.getAttribute('data-id')}/restore?_method=PATCH`
+                hiddenRestoreForm.submit()
+            }
+        ))
+
+        //handle remove action
+        removeModal.addEventListener('show.bs.modal', function (event) {
+            // Button that triggered the modal
+            var button = event.relatedTarget
+            // Extract info from data-bs-* attributes
+            var courseId = button.getAttribute('data-bs-whatever')
+            hiddenForm.action = `/me/${courseId}/remove?_method=DELETE`
+            deleteButton.addEventListener('click', () => hiddenForm.submit())
+        })
+
+        //handle form checkall input (2 way)
+        formCheckboxAll.change(function () {
+            var isCheckAll = $(this).prop('checked')
+            courseItemCheckbox.prop('checked', isCheckAll)
+            checkApplyDisable()
+        })
+
+        courseItemCheckbox.change(function () {
+            var isAllChecked = $('input[name="courseItemCheckbox"]:checked').length === courseItemCheckbox.length
+            formCheckboxAll.prop('checked', isAllChecked)
+            checkApplyDisable()
+        })
+
+        // disable apply button
+        formSelect.change(function () {
+            checkApplyDisable()
+        })
+
+        function checkApplyDisable() {
+            var count = $('input[name="courseItemCheckbox"]:checked').length
+            if (count > 0 && formSelect.prop('value')) {
+                applyBtn.prop('disabled', false)
+            }
+            else {
+                applyBtn.prop('disabled', true)
+            }
+        }
+        // handle submit
+        applyBtn.click(function(e) {
+            e.preventDefault()
+            myForm.submit()
+        })
+    })
+</script>
